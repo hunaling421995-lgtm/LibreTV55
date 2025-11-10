@@ -1,445 +1,955 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LibreTV - 免费在线视频搜索与观看平台</title>
-    <meta name="description" content="LibreTV是一个免费的在线视频搜索平台，无广告、安全，提供来自多个视频源的内容搜索与观看服务，无需注册即可使用。">
-    <meta name="keywords" content="在线视频,免费视频,视频搜索,电影,电视剧,LibreTV">
-    <meta name="author" content="LibreTV Team">
-
-    <!-- Favicon -->
-    <link rel="icon" href="image/logo.png">
-    <link rel="apple-touch-icon" href="image/logo-black.png">
-    <link rel="manifest" href="manifest.json">
-    
-    <script src="libs/tailwindcss.min.js"></script>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/index.css">
-</head>
-<body class="page-bg text-white">
-    <!-- 将历史记录按钮移到左上角，并缩小尺寸 -->
-    <div class="fixed top-4 left-4 z-10">
-        <button onclick="toggleHistory(event)" class="bg-[#222] hover:bg-[#333] border border-[#333] hover:border-white rounded-lg px-3 py-1.5 transition-colors" aria-label="观看历史">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-        </button>
-    </div>
-
-    <!-- 设置按钮保留在右上角，并缩小尺寸 -->
-    <div class="fixed top-4 right-4 z-10">
-        <button onclick="toggleSettings(event)" class="bg-[#222] hover:bg-[#333] border border-[#333] hover:border-white rounded-lg px-3 py-1.5 transition-colors" aria-label="打开设置">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            </svg>
-        </button>
-    </div>
-    
-    <!-- 历史记录面板 - 标题居中 -->
-    <div id="historyPanel" class="history-panel fixed left-0 top-0 h-full bg-[#111] border-r border-[#333] p-6 z-40 transform -translate-x-full transition-transform duration-300" aria-label="观看历史" aria-hidden="true">
-        <div class="flex justify-between items-center mb-6">
-                <button onclick="toggleHistory()" class="close-btn">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            <h3 class="text-xl font-bold gradient-text mx-auto">观看历史</h3>
-            <div class="w-4"></div> <!-- 添加一个占位元素以确保标题居中 -->
-        </div>
-        <div id="historyList" class="pb-4">
-            <!-- 历史记录将在这里动态显示 -->
-            <div class="text-center text-gray-500 py-8">暂无观看记录</div>
-        </div>
-        <div class="mt-4 text-center sticky bottom-0 pb-2 pt-2 bg-[#111]">
-            <button onclick="clearViewingHistory()" class="px-4 py-2 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-lg text-sm transition-all duration-300 shadow-md hover:shadow-lg">
-                清空历史记录
-            </button>
-        </div>
-    </div>
-
-    <!-- 设置面板 -->
-    <div id="settingsPanel" class="settings-panel fixed right-0 top-0 h-full w-80 bg-[#111] border-l border-[#333] p-6 z-40 overflow-y-auto" aria-label="设置面板" aria-hidden="true">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-bold gradient-text">设置</h3>
-            <button onclick="toggleSettings()" class="close-btn">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-        </div>
-        <div class="space-y-5">
-            <!-- 数据源设置区域 -->
-            <div class="p-3 bg-[#151515] rounded-lg shadow-inner">
-                <label class="block text-sm font-medium text-gray-400 mb-3 border-b border-[#333] pb-1">数据源设置</label>
-                
-                <!-- 批量操作按钮 -->
-                <div class="flex space-x-2 mb-3">
-                    <button onclick="selectAllAPIs(true)" class="px-2 py-1 bg-[#333] hover:bg-[#444] text-white text-xs rounded">全选</button>
-                    <button onclick="selectAllAPIs(false)" class="px-2 py-1 bg-[#333] hover:bg-[#444] text-white text-xs rounded">全不选</button>
-                    <button onclick="selectAllAPIs(true, true)" class="px-2 py-1 bg-[#333] hover:bg-[#444] text-white text-xs rounded">全选普通资源</button>
-                </div>
-                
-                <!-- API选择区域 - 使用滚动区域 -->
-                <div class="max-h-40 overflow-y-auto bg-[#191919] p-2 rounded-lg mb-3">
-                    <div id="apiCheckboxes">
-                        <!-- 这里将动态插入API复选框 -->
-                    </div>
-                </div>
-                
-                <!-- API信息显示 -->
-                <div class="text-xs text-gray-500 flex justify-between items-center">
-                    <span>已选API数量：<span id="selectedApiCount" class="text-white">0</span></span>
-                    <span id="siteStatus" class="ml-2"></span>
-                </div>
-            </div>
-
-            <!-- 自定义API管理区域 -->
-            <div class="p-3 bg-[#151515] rounded-lg shadow-inner">
-                <div class="flex justify-between items-center mb-2">
-                    <label class="block text-sm font-medium text-gray-400 border-b border-[#333] w-full pb-1">自定义API</label>
-                    <button onclick="showAddCustomApiForm()" class="bg-[#333] hover:bg-[#444] text-white w-6 h-6 rounded-full text-center leading-none text-lg ml-1">+</button>
-                </div>
-                <div id="customApisList" class="max-h-32 overflow-y-auto mb-2">
-                    <!-- 自定义API将显示在这里 -->
-                </div>
-                
-                <!-- 添加自定义API表单 (默认隐藏) -->
-                <div id="addCustomApiForm" class="hidden mt-2 p-2 bg-[#191919] rounded-lg">
-                    <input type="text" id="customApiName" placeholder="API名称" class="w-full bg-[#222] border border-[#333] text-white px-2 py-1 rounded mb-2" autocomplete="off">
-                    <input type="text" id="customApiUrl" placeholder="https://abc.com" class="w-full bg-[#222] border border-[#333] text-white px-2 py-1 rounded mb-2" autocomplete="off">
-                    <!-- 新增 detail 地址输入框 -->
-                    <input type="text" id="customApiDetail" placeholder="detail地址（可选）" class="w-full bg-[#222] border border-[#333] text-white px-2 py-1 rounded mb-2" autocomplete="off">
-                    <!-- 添加成人内容切换 -->
-                    <div class="flex items-center mb-2">
-                        <input type="checkbox" id="customApiIsAdult" class="form-checkbox h-4 w-4 text-pink-500 bg-[#222] border border-[#333]">
-                        <label for="customApiIsAdult" class="ml-2 text-xs text-pink-400">黄色资源站</label>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button onclick="addCustomApi()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs">添加</button>
-                        <button onclick="cancelAddCustomApi()" class="bg-[#444] hover:bg-[#555] text-white px-3 py-1 rounded text-xs">取消</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 内容过滤设置区域 -->
-            <div class="p-3 bg-[#151515] rounded-lg shadow-inner">
-                <label class="block text-sm font-medium text-gray-400 mb-3 border-b border-[#333] pb-1">功能开关</label>
-                
-                <!-- 黄色内容过滤开关 -->
-                <div class="flex flex-col mb-3 pb-3 border-b border-[#222] relative">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <label class="text-sm font-medium text-gray-400">黄色内容过滤</label>
-                            <p class="text-xs text-gray-500 mt-1 filter-description">过滤"伦理片"等黄色内容</p>
-                        </div>
-                        <div class="relative inline-block w-12 align-middle select-none">
-                            <input type="checkbox" id="yellowFilterToggle" class="opacity-0 absolute w-full h-full cursor-pointer z-10">
-                            <div class="toggle-bg bg-[#333] w-12 h-6 rounded-full transition-colors duration-300 ease-in-out"></div>
-                            <div class="toggle-dot absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 transition-transform duration-300 ease-in-out"></div>
-                        </div>
-                    </div>
-                    <!-- 警告提示将在这里动态插入 -->
-                </div>
-                
-                <!-- 广告过滤开关 -->
-                <div class="flex items-center justify-between mb-3 pb-3 border-b border-[#222]">
-                    <div>
-                        <label class="text-sm font-medium text-gray-400">分片广告过滤</label>
-                        <p class="text-xs text-gray-500 mt-1">关闭可减少旧版浏览器卡顿</p>
-                    </div>
-                    <div class="relative inline-block w-12 align-middle select-none">
-                        <input type="checkbox" id="adFilterToggle" class="opacity-0 absolute w-full h-full cursor-pointer z-10">
-                        <div class="toggle-bg bg-[#333] w-12 h-6 rounded-full transition-colors duration-300 ease-in-out"></div>
-                        <div class="toggle-dot absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 transition-transform duration-300 ease-in-out"></div>
-                    </div>
-                </div>
-                
-                <!-- 豆瓣热门开关 -->
-                <div class="flex items-center justify-between">
-                    <div>
-                        <label class="text-sm font-medium text-gray-400">豆瓣热门推荐</label>
-                        <p class="text-xs text-gray-500 mt-1">首页显示豆瓣热门影视内容</p>
-                    </div>
-                    <div class="relative inline-block w-12 align-middle select-none">
-                        <input type="checkbox" id="doubanToggle" class="opacity-0 absolute w-full h-full cursor-pointer z-10">
-                        <div class="toggle-bg bg-[#333] w-12 h-6 rounded-full transition-colors duration-300 ease-in-out"></div>
-                        <div class="toggle-dot absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 transition-transform duration-300 ease-in-out"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 一般功能区域 -->
-            <div class="p-3 bg-[#151515] rounded-lg shadow-inner">
-                <label class="block text-sm font-medium text-gray-400 mb-3 border-b border-[#333] pb-1">一般功能</label>
-                <button onclick="importConfig()" class="px-4 py-2 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-lg text-sm transition-all duration-300 shadow-md hover:shadow-lg mb-2">导入配置</button>
-                <button onclick="exportConfig()" class="px-4 py-2 mb-2 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-lg text-sm transition-all duration-300 shadow-md hover:shadow-lg">导出配置</button>
-                <button onclick="clearLocalStorage()" class="px-4 py-2 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-lg text-sm transition-all duration-300 shadow-md hover:shadow-lg">清除Cookie</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="container mx-auto px-4 py-8 flex flex-col h-screen">
-        <div class="flex-1 flex flex-col">
-            <!-- 网站标志和口号 -->
-            <header class="text-center mb-2">
-                <div class="flex justify-center items-center mb-4">
-                    <a href="#" onclick="resetToHome(); return false;" class="flex items-center">
-                        <svg class="w-10 h-10 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                        </svg>
-                        <h1 class="text-5xl font-bold gradient-text">LibreTV</h1>
-                    </a>
-                </div>
-                <p class="text-gray-400 mb-8">自由观影，畅享精彩</p>
-            </header>
-            
-
-            <div id="searchArea" class="flex-1 flex flex-col items-center justify-center">
-                <div class="w-full max-w-2xl">
-                    <div class="flex items-stretch mb-3 h-14 shadow-lg rounded-lg overflow-hidden">
-                        <!-- 首页按钮 -->
-                        <button onclick="resetToHome()" 
-                                class="w-20 sm:w-24 flex items-center justify-center bg-white text-black font-medium hover:bg-gray-200 transition-colors" 
-                                aria-label="返回首页" title="返回首页">
-                            首页
-                        </button>
-                        <!-- 搜索输入 -->
-                        <input type="text" 
-                               id="searchInput" 
-                               class="flex-1 bg-[#111] border-y border-[#333] text-white px-6 py-0 focus:outline-none transition-colors min-w-0" 
-                               placeholder="搜索你喜欢的视频..." 
-                               autocomplete="off"
-                               aria-label="视频搜索框"
-                               oninput="toggleClearButton()">
-                        <!-- 清空按钮 -->
-                        <button id="clearSearchInput" 
-                                class="flex pr-2 bg-[#111] border-y border-[#333] items-center justify-center text-gray-400 hover:text-white hidden"
-                                onclick="clearSearchInput()"
-                                aria-label="清空搜索框"
-                                title="清空搜索框">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                        <!-- 搜索按钮 -->
-                        <button onclick="search()" 
-                                class="w-20 sm:w-24 flex items-center justify-center bg-white text-black font-medium hover:bg-gray-200 transition-colors" 
-                                aria-label="搜索按钮">
-                            搜索
-                        </button>
-                    </div>
-                    
-                    <!-- 添加最近搜索记录部分 -->
-                    <div id="recentSearches" class="mt-4 flex flex-wrap gap-2" aria-label="最近搜索记录">
-                        <!-- 这里会动态插入最近的搜索记录 -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 豆瓣热门推荐区域: 默认隐藏，现在位于搜索区域下方，调整宽度 -->
-            <div id="doubanArea" class="w-full my-8 hidden">
-                <div class="mx-auto max-w-screen-xl px-2">
-                    <!-- 改进标题和标签区域布局 -->
-                    <div class="mb-4">
-                        <!-- 标题和刷新按钮一行 -->
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <h2 class="text-xl font-bold text-white mr-4">豆瓣热门</h2>
-                                <!-- 添加电影/电视剧切换开关 -->
-                                <div class="flex items-center bg-[#222] rounded-full p-1">
-                                    <button id="douban-movie-toggle" class="px-3 py-1 text-sm rounded-full bg-pink-600 text-white">电影</button>
-                                    <button id="douban-tv-toggle" class="px-3 py-1 text-sm rounded-full text-gray-300 hover:text-white">电视剧</button>
-                                </div>
-                            </div>
-                            <button id="douban-refresh" class="text-sm px-3 py-1 bg-pink-600 hover:bg-pink-700 text-white rounded-lg flex items-center gap-1">
-                                <span>换一批</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                            </button>
-                        </div>
-                        <!-- 分类标签独立成行，添加滚动支持以适应移动设备 -->
-                        <div class="overflow-x-auto pb-2">
-                            <div id="douban-tags" class="flex space-x-2 min-w-max"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- 推荐内容 -->
-                    <div id="douban-results" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3"></div>
-                </div>
-            </div>
-            
-            <!-- 搜索结果：初始隐藏 -->
-            <div id="resultsArea" class="w-full hidden">
-                <div class="mx-auto max-w-7xl px-2"> <!-- 添加最大宽度限制并居中 -->
-                    <div class="flex justify-end items-center mb-4">
-                        <div class="text-sm text-gray-400">
-                            <span id="searchResultsCount">0</span> 个结果
-                        </div>
-                    </div>
-                    <!-- 修改网格布局以适应大一些的横向卡片 -->
-                    <div id="results" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        <!-- 结果将在这里动态生成 -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 页脚区域 -->
-    <footer class="footer mt-8 py-6 border-t border-[#333] bg-[#0a0a0a]">
-        <div class="container mx-auto px-4">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <div class="mb-4 md:mb-0">
-                    <div class="flex items-center justify-center md:justify-start">
-                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                        </svg>
-                        <span class="gradient-text font-bold">LibreTV</span>
-                    </div>
-                    <p class="text-gray-500 text-sm mt-2 text-center md:text-left">© 2025 LibreTV - 自由观影，畅享精彩</p>
-                </div>
-                
-                <div class="text-center md:text-right">
-                    <p class="text-gray-500 text-sm max-w-md">
-                        免责声明：本站仅为视频搜索工具，不存储、上传或分发任何视频内容。
-                        所有视频均来自第三方API接口。如有侵权，请联系相关内容提供方。
-                    </p>
-                    <div class="mt-2 flex justify-center md:justify-end space-x-4">
-                        <a href="about.html" class="text-gray-400 hover:text-white text-sm transition-colors">关于我们</a>
-                        <a href="about.html" class="text-gray-400 hover:text-white text-sm transition-colors">隐私政策</a>
-                        <a href="https://www.msf.hk/zh-hant/donate/general?type=one-off" target="_blank" rel="noopener" class="text-blue-400 hover:text-blue-300 text-sm transition-colors">捐赠</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- 详情模态框 -->
-    <div id="modal" class="fixed inset-0 bg-black/95 hidden flex items-center justify-center transition-opacity duration-300 z-40">
-        <div class="bg-[#111] p-8 rounded-lg w-11/12 max-w-4xl border border-[#333] max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center mb-6 flex-none">
-                <h2 id="modalTitle" class="text-2xl font-bold gradient-text break-words pr-4 max-w-[80%]"></h2>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-white text-2xl transition-colors flex-shrink-0">&times;</button>
-            </div>
-            <div id="modalContent" class="overflow-auto flex-1 min-h-0">
-                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 密码验证弹窗 -->
-    <div id="passwordModal" class="fixed inset-0 bg-black/95 hidden items-center justify-center z-[65] transition-opacity duration-300">
-        <div class="bg-[#111] p-8 rounded-lg w-11/12 max-w-md border border-[#333] max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center mb-6 flex-none">
-                <h2 class="text-2xl font-bold gradient-text">访问验证</h2>
-            </div>
-            <div class="mb-6">
-                <p class="text-gray-300 mb-4">请输入密码继续访问</p>
-                <form id="passwordForm" onsubmit="handlePasswordSubmit(); return false;">
-                    <input type="text" name="username" id="username" autocomplete="username" style="display:none" tabindex="-1" aria-hidden="true">
-                    <input type="password" id="passwordInput" class="w-full bg-[#111] border border-[#333] text-white px-4 py-3 rounded-lg focus:outline-none focus:border-white transition-colors" placeholder="密码..." autocomplete="new-password">
-                    <div class="mt-4 w-full flex space-x-4">
-                        <button id="passwordSubmitBtn" type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">提交</button>
-                        <button id="passwordCancelBtn" type="button" onclick="hidePasswordModal()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">取消</button>
-                    </div>
-                </form>
-                <p id="passwordError" class="text-red-500 mt-2 hidden">密码错误，请重试</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- 版权声明弹窗 -->
-    <div id="disclaimerModal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[60]">
-        <div class="bg-[#111] p-8 rounded-lg border border-[#333] w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h2 class="text-2xl font-bold gradient-text mb-6 text-center">使用声明</h2>
-            <div class="text-gray-300 space-y-4">
-                <p>
-                    欢迎使用 LibreTV。在开始使用前，请您了解并同意以下条款：
-                </p>
-                <p>
-                    <strong class="text-blue-400">服务性质：</strong> LibreTV 仅提供视频搜索服务，不直接提供、存储或上传任何视频内容。所有搜索结果均来自第三方公开接口。
-                </p>
-                <p>
-                    <strong class="text-blue-400">用户责任：</strong> 用户在使用本站服务时，须遵守相关法律法规，不得利用搜索结果从事侵权行为，如下载、传播未经授权的作品等。
-                </p>
-                <p>
-                    <strong class="text-blue-400">广告风险提示：</strong> 本站所有视频均来自第三方采集站，视频中出现的广告与本站无关，请勿相信或点击视频中的任何广告内容，谨防上当受骗。
-                </p>
-            </div>
-            <div class="mt-6 flex justify-center">
-                <button id="acceptDisclaimerBtn" class="px-6 py-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-300">
-                    我已了解并接受
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 错误提示框 -->
-    <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 opacity-0 -translate-y-full z-50">
-        <p id="toastMessage"></p>
-    </div>
-
-    <!-- 添加 loading 提示框 -->
-    <div id="loading" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50">
-        <div class="bg-[#111] p-8 rounded-lg border border-[#333] flex items-center space-x-4">
-            <div class="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-            <p class="text-white text-lg">加载中...</p>
-        </div>
-    </div>
-
-    <!-- JSON-LD 结构化数据 -->
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "LibreTV",
-        "url": "https://libretv.is-an.org/",
-        "description": "免费在线视频搜索与观看平台",
-        "potentialAction": {
-            "@type": "SearchAction",
-            "target": "https://libretv.is-an.org/?s={search_term_string}",
-            "query-input": "required name=search_term_string"
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CinemaVerse - 现代影视平台</title>
+  <!-- Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <!-- 统一的 Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#e50914',
+            secondary: '#0071eb',
+            dark: {
+              100: '#333333',
+              200: '#262626',
+              300: '#1a1a1a',
+              400: '#141414',
+              500: '#0a0a0a',
+              600: '#000000'
+            },
+            light: {
+              100: '#ffffff',
+              200: '#f5f5f5',
+              300: '#e5e5e5',
+              400: '#b3b3b3'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.5s ease-in-out',
+            'slide-down': 'slideDown 0.5s ease-in-out',
+            'slide-left': 'slideLeft 0.5s ease-in-out',
+            'slide-right': 'slideRight 0.5s ease-in-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            },
+            slideDown: {
+              '0%': { transform: 'translateY(-20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            },
+            slideLeft: {
+              '0%': { transform: 'translateX(20px)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            slideRight: {
+              '0%': { transform: 'translateX(-20px)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+          },
+          boxShadow: {
+            'glow': '0 0 15px rgba(229, 9, 20, 0.5)',
+            'glow-lg': '0 0 25px rgba(229, 9, 20, 0.7)',
+          },
+          backdropBlur: {
+            'xs': '2px',
+          }
         }
+      },
+      darkMode: 'class',
     }
-    </script>
-
-    <!-- 引入纯 JS sha256（HTTP 下依然可用） -->
-    <script src="libs/sha256.min.js"></script>
-    <script>
-        // 保存原始 js‑sha256 实现，避免被 password.js 覆盖
-        window._jsSha256 = window.sha256;
-    </script>
-    <script src="js/config.js"></script>
-    <script src="js/proxy-auth.js"></script>
-    <script src="js/customer_site.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/douban.js"></script>
-    <script src="js/password.js"></script>
-    <script src="js/search.js"></script>
-    <script src="js/app.js"></script>
-
-    <!-- PWA 注册 -->
-    <script src="js/pwa-register.js"></script>
-
-    <!-- 环境变量注入脚本 -->
-    <script>
-        // 创建全局环境变量对象
-        window.__ENV__ = window.__ENV__ || {};
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      }
+      .text-shadow-lg {
+        text-shadow: 0 4px 8px rgba(0, 0, 0, 0.8);
+      }
+      .bg-gradient-overlay {
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.8));
+      }
+      .bg-gradient-overlay-top {
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.2));
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .card-hover {
+        transition: all 0.3s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+      }
+      .glass-effect {
+        background: rgba(26, 26, 26, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .glass-effect-light {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .rating-circle {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .rating-circle::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: conic-gradient(var(--rating-color) var(--rating-value), rgba(255, 255, 255, 0.1) var(--rating-value));
+        z-index: 0;
+      }
+      .rating-circle span {
+        position: relative;
+        z-index: 1;
+      }
+    }
+  </style>
+</head>
+<body class="bg-dark-400 text-light-100 min-h-screen">
+  <!-- 导航栏 -->
+  <header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" id="navbar">
+    <div class="glass-effect py-4 px-6 md:px-12">
+      <div class="container mx-auto flex items-center justify-between">
+        <!-- Logo -->
+        <div class="flex items-center space-x-2">
+          <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/bc2a07bc7aec4511913948061c0b06f3~tplv-a9rns2rl98-image.image?rcl=202511101245002DABCB06331CBCEDAECD&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1765341951&x-signature=3SGGrw2FgfMIU%2B47vr7eGDjk5e0%3D" alt="CinemaVerse Logo" class="h-10 w-10">
+          <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">CinemaVerse</h1>
+        </div>
         
-        // 注入服务器端环境变量 (将由服务器端替换)
-        // PASSWORD 变量将在这里被服务器端注入
-        window.__ENV__.PASSWORD = "{{PASSWORD}}";
-    </script>
+        <!-- 搜索框 -->
+        <div class="hidden md:flex items-center flex-1 max-w-xl mx-8">
+          <div class="relative w-full">
+            <input type="text" placeholder="搜索电影、电视剧、演员..." class="w-full bg-dark-300 border border-dark-100 rounded-full py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-primary transition-all">
+            <i class="fa fa-search absolute left-3 top-3 text-light-400"></i>
+          </div>
+        </div>
+        
+        <!-- 导航菜单 -->
+        <nav class="hidden md:flex items-center space-x-8">
+          <a href="#" class="text-light-100 hover:text-primary transition-colors">首页</a>
+          <a href="#" class="text-light-400 hover:text-primary transition-colors">电影</a>
+          <a href="#" class="text-light-400 hover:text-primary transition-colors">电视剧</a>
+          <a href="#" class="text-light-400 hover:text-primary transition-colors">我的收藏</a>
+          <button class="bg-primary hover:bg-red-700 text-white rounded-full py-2 px-6 transition-colors">登录</button>
+        </nav>
+        
+        <!-- 移动端菜单按钮 -->
+        <button class="md:hidden text-light-100 focus:outline-none" id="mobile-menu-button">
+          <i class="fa fa-bars text-2xl"></i>
+        </button>
+      </div>
+    </div>
+    
+    <!-- 移动端搜索框 -->
+    <div class="md:hidden px-6 py-3 glass-effect hidden" id="mobile-search">
+      <div class="relative">
+        <input type="text" placeholder="搜索电影、电视剧、演员..." class="w-full bg-dark-300 border border-dark-100 rounded-full py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-primary transition-all">
+        <i class="fa fa-search absolute left-3 top-3 text-light-400"></i>
+      </div>
+    </div>
+    
+    <!-- 移动端导航菜单 -->
+    <div class="md:hidden glass-effect hidden" id="mobile-menu">
+      <nav class="flex flex-col py-4 px-6 space-y-4">
+        <a href="#" class="text-light-100 hover:text-primary transition-colors py-2 border-b border-dark-300">首页</a>
+        <a href="#" class="text-light-400 hover:text-primary transition-colors py-2 border-b border-dark-300">电影</a>
+        <a href="#" class="text-light-400 hover:text-primary transition-colors py-2 border-b border-dark-300">电视剧</a>
+        <a href="#" class="text-light-400 hover:text-primary transition-colors py-2 border-b border-dark-300">我的收藏</a>
+        <button class="bg-primary hover:bg-red-700 text-white rounded-full py-2 px-6 transition-colors mt-4">登录</button>
+      </nav>
+    </div>
+  </header>
 
-    <!-- 版本检测脚本 -->
-    <script src="js/version-check.js"></script>
+  <!-- 主要内容 -->
+  <main class="pt-24">
+    <!-- 英雄区 -->
+    <section class="relative h-[70vh] min-h-[500px] overflow-hidden">
+      <div class="absolute inset-0 z-0">
+        <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/6a639ffb07664bb0a04ee40a8e8c1d05~tplv-a9rns2rl98-image.image?rcl=202511101245002DABCB06331CBCEDAECD&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1765341952&x-signature=A7XnxCsTDj9aybTaQsqQO7Biyd8%3D" alt="电影推荐横幅" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-overlay"></div>
+      </div>
+      
+      <div class="container mx-auto px-6 md:px-12 relative z-10 h-full flex flex-col justify-end pb-16">
+        <div class="max-w-2xl animate-fade-in">
+          <span class="inline-block bg-primary text-white px-3 py-1 rounded-full text-sm font-medium mb-4">热门推荐</span>
+          <h2 class="text-4xl md:text-5xl font-bold mb-4 text-shadow-lg">探索无限影视世界</h2>
+          <p class="text-light-300 mb-8 text-shadow">发现最新、最热门的电影和电视剧，个性化推荐满足您的观影喜好</p>
+          <div class="flex flex-wrap gap-4">
+            <button class="bg-primary hover:bg-red-700 text-white rounded-full py-3 px-8 flex items-center space-x-2 transition-all transform hover:scale-105">
+              <i class="fa fa-play"></i>
+              <span>立即观看</span>
+            </button>
+            <button class="bg-dark-300 bg-opacity-70 hover:bg-opacity-100 text-white rounded-full py-3 px-8 flex items-center space-x-2 transition-all transform hover:scale-105">
+              <i class="fa fa-plus"></i>
+              <span>加入收藏</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 特色内容 -->
+    <section class="py-12 bg-dark-500">
+      <div class="container mx-auto px-6 md:px-12">
+        <div class="flex justify-between items-center mb-8">
+          <h2 class="text-2xl md:text-3xl font-bold">热门电影</h2>
+          <a href="#" class="text-secondary hover:text-primary transition-colors flex items-center">
+            <span>查看全部</span>
+            <i class="fa fa-chevron-right ml-2 text-xs"></i>
+          </a>
+        </div>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          <!-- 电影卡片 1 -->
+          <div class="movie-card group card-hover rounded-lg overflow-hidden bg-dark-300">
+            <div class="relative overflow-hidden">
+              <img src="https://p3-doubao-search-sign.byteimg.com/pgc-image/7955b42eb66845b0b4919c602122f929~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341943&x-signature=wJzVYG6Xk0F2bFfBEvqgM9F7WqU%3D" alt="电影海报" class="w-full aspect-[2/3] object-cover transition-transform duration-500 group-hover:scale-110">
+              <div class="absolute inset-0 bg-gradient-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <button class="bg-primary hover:bg-red-700 text-white rounded-full w-12 h-12 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                  <i class="fa fa-play"></i>
+                </button>
+              </div>
+              <span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded">9.2</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-bold mb-1 truncate">复仇者联盟</h3>
+              <div class="flex justify-between items-center text-xs text-light-400">
+                <span>2023</span>
+                <span>动作/科幻</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 电影卡片 2 -->
+          <div class="movie-card group card-hover rounded-lg overflow-hidden bg-dark-300">
+            <div class="relative overflow-hidden">
+              <img src="https://p3-doubao-search-sign.byteimg.com/pgc-image/53e29a1d8a064a558461608718965404~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341943&x-signature=v3mB%2BdT7dL%2FOywNkL6o1Hh%2BsW%2BQ%3D" alt="电影海报" class="w-full aspect-[2/3] object-cover transition-transform duration-500 group-hover:scale-110">
+              <div class="absolute inset-0 bg-gradient-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <button class="bg-primary hover:bg-red-700 text-white rounded-full w-12 h-12 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                  <i class="fa fa-play"></i>
+                </button>
+              </div>
+              <span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded">8.7</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-bold mb-1 truncate">明日世界</h3>
+              <div class="flex justify-between items-center text-xs text-light-400">
+                <span>2024</span>
+                <span>科幻/冒险</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 电影卡片 3 -->
+          <div class="movie-card group card-hover rounded-lg overflow-hidden bg-dark-300">
+            <div class="relative overflow-hidden">
+              <img src="https://p3-doubao-search-sign.byteimg.com/pgc-image/RBMLLh6YVutq58R14RhD%285%29~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341943&x-signature=8wLUbxWc5%2BwDtNwY9gCxR3b95c0%3D" alt="电影海报" class="w-full aspect-[2/3] object-cover transition-transform duration-500 group-hover:scale-110">
+              <div class="absolute inset-0 bg-gradient-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <button class="bg-primary hover:bg-red-700 text-white rounded-full w-12 h-12 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                  <i class="fa fa-play"></i>
+                </button>
+              </div>
+              <span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded">8.5</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-bold mb-1 truncate">末路狂花钱</h3>
+              <div class="flex justify-between items-center text-xs text-light-400">
+                <span>2024</span>
+                <span>喜剧</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 电影卡片 4 -->
+          <div class="movie-card group card-hover rounded-lg overflow-hidden bg-dark-300">
+            <div class="relative overflow-hidden">
+              <img src="https://p3-doubao-search-sign.byteimg.com/pgc-image/15215841056331f01477291~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341943&x-signature=K6HycraOiuHeW7%2B4O6fZzNKo6LM%3D" alt="电影海报" class="w-full aspect-[2/3] object-cover transition-transform duration-500 group-hover:scale-110">
+              <div class="absolute inset-0 bg-gradient-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <button class="bg-primary hover:bg-red-700 text-white rounded-full w-12 h-12 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                  <i class="fa fa-play"></i>
+                </button>
+              </div>
+              <span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded">8.3</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-bold mb-1 truncate">寒单</h3>
+              <div class="flex justify-between items-center text-xs text-light-400">
+                <span>2024</span>
+                <span>剧情</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 电影卡片 5 -->
+          <div class="movie-card group card-hover rounded-lg overflow-hidden bg-dark-300">
+            <div class="relative overflow-hidden">
+              <img src="https://p3-doubao-search-sign.byteimg.com/pgc-image/1598087773396901~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341943&x-signature=eMKWEWYcdC2hXS3M1R%2F%2BEpJq%2BQc%3D" alt="电影海报" class="w-full aspect-[2/3] object-cover transition-transform duration-500 group-hover:scale-110">
+              <div class="absolute inset-0 bg-gradient-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <button class="bg-primary hover:bg-red-700 text-white rounded-full w-12 h-12 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                  <i class="fa fa-play"></i>
+                </button>
+              </div>
+              <span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded">8.1</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-bold mb-1 truncate">山花绽放时</h3>
+              <div class="flex justify-between items-center text-xs text-light-400">
+                <span>2024</span>
+                <span>剧情/爱情</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 电视剧推荐 -->
+    <section class="py-12 bg-dark-400">
+      <div class="container mx-auto px-6 md:px-12">
+        <div class="flex justify-between items-center mb-8">
+          <h2 class="text-2xl md:text-3xl font-bold">热门电视剧</h2>
+          <a href="#" class="text-secondary hover:text-primary transition-colors flex items-center">
+            <span>查看全部</span>
+            <i class="fa fa-chevron-right ml-2 text-xs"></i>
+          </a>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <!-- 电视剧卡片 1 -->
+          <div class="tv-card group card-hover rounded-lg overflow-hidden bg-dark-300">
+            <div class="relative overflow-hidden">
+              <img src="https://p26-doubao-search-sign.byteimg.com/tos-cn-i-xv4ileqgde/017e0a499271401f9000000000000000~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341942&x-signature=W%2Fv91d0I1n%2F8Z7%2FFfWJkE%2F95Ruo%3D" alt="电视剧海报" class="w-full aspect-video object-cover transition-transform duration-500 group-hover:scale-110">
+              <div class="absolute inset-0 bg-gradient-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <button class="bg-primary hover:bg-red-700 text-white rounded-full w-12 h-12 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                  <i class="fa fa-play"></i>
+                </button>
+              </div>
+              <span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded">9.0</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-bold mb-1 truncate">王冠</h3>
+              <div class="flex justify-between items-center text-xs text-light-400">
+                <span>2023</span>
+                <span>历史/剧情</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 电视剧卡片 2 -->
+          <div class="tv-card group card-hover rounded-lg overflow-hidden bg-dark-300">
+            <div class="relative overflow-hidden">
+              <img src="https://p26-doubao-search-sign.byteimg.com/tos-cn-i-xv4ileqgde/97224663587f4527922366226269167f~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341942&x-signature=Eq7zrXxqDSPOx9f18yVYGfK4908%3D" alt="电视剧海报" class="w-full aspect-video object-cover transition-transform duration-500 group-hover:scale-110">
+              <div class="absolute inset-0 bg-gradient-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <button class="bg-primary hover:bg-red-700 text-white rounded-full w-12 h-12 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                  <i class="fa fa-play"></i>
+                </button>
+              </div>
+              <span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded">8.6</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-bold mb-1 truncate">美人为馅</h3>
+              <div class="flex justify-between items-center text-xs text-light-400">
+                <span>2023</span>
+                <span>悬疑/犯罪</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 电视剧卡片 3 -->
+          <div class="tv-card group card-hover rounded-lg overflow-hidden bg-dark-300">
+            <div class="relative overflow-hidden">
+              <img src="https://p26-doubao-search-sign.byteimg.com/tos-cn-i-xv4ileqgde/1b891a3945a24316b082900013931b25~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341942&x-signature=3Wq6Vzo5wbgBBP%2Fm%2BDd2lZNIcc4%3D" alt="电视剧海报" class="w-full aspect-video object-cover transition-transform duration-500 group-hover:scale-110">
+              <div class="absolute inset-0 bg-gradient-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <button class="bg-primary hover:bg-red-700 text-white rounded-full w-12 h-12 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                  <i class="fa fa-play"></i>
+                </button>
+              </div>
+              <span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded">8.8</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-bold mb-1 truncate">大秦赋</h3>
+              <div class="flex justify-between items-center text-xs text-light-400">
+                <span>2023</span>
+                <span>历史/战争</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 电视剧卡片 4 -->
+          <div class="tv-card group card-hover rounded-lg overflow-hidden bg-dark-300">
+            <div class="relative overflow-hidden">
+              <img src="https://p26-doubao-search-sign.byteimg.com/tos-cn-i-xv4ileqgde/4b614464692b4a059000000000000000~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341942&x-signature=Duk%2BQIFqV0y5Mkh%2F0b%2F0a3wNQl8%3D" alt="电视剧海报" class="w-full aspect-video object-cover transition-transform duration-500 group-hover:scale-110">
+              <div class="absolute inset-0 bg-gradient-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <button class="bg-primary hover:bg-red-700 text-white rounded-full w-12 h-12 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                  <i class="fa fa-play"></i>
+                </button>
+              </div>
+              <span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded">8.7</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-bold mb-1 truncate">大决战</h3>
+              <div class="flex justify-between items-center text-xs text-light-400">
+                <span>2023</span>
+                <span>历史/战争</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- AI 推荐系统 -->
+    <section class="py-12 bg-dark-500">
+      <div class="container mx-auto px-6 md:px-12">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+          <div>
+            <h2 class="text-2xl md:text-3xl font-bold mb-2">为您推荐</h2>
+            <p class="text-light-400">基于您的观看历史和偏好</p>
+          </div>
+          
+          <div class="mt-4 md:mt-0 flex items-center space-x-4">
+            <button class="filter-btn active bg-primary text-white px-4 py-2 rounded-full text-sm transition-colors" data-filter="all">全部</button>
+            <button class="filter-btn bg-dark-300 hover:bg-primary text-white px-4 py-2 rounded-full text-sm transition-colors" data-filter="movie">电影</button>
+            <button class="filter-btn bg-dark-300 hover:bg-primary text-white px-4 py-2 rounded-full text-sm transition-colors" data-filter="tv">电视剧</button>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6" id="recommendation-container">
+          <!-- 推荐内容将通过 JavaScript 动态生成 -->
+        </div>
+      </div>
+    </section>
+    
+    <!-- 分类浏览 -->
+    <section class="py-12 bg-dark-400">
+      <div class="container mx-auto px-6 md:px-12">
+        <h2 class="text-2xl md:text-3xl font-bold mb-8">按分类浏览</h2>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-12">
+          <!-- 分类按钮 1 -->
+          <button class="category-btn flex flex-col items-center justify-center p-6 rounded-lg bg-dark-300 hover:bg-primary transition-colors">
+            <i class="fa fa-film text-3xl mb-3"></i>
+            <span>动作</span>
+          </button>
+          
+          <!-- 分类按钮 2 -->
+          <button class="category-btn flex flex-col items-center justify-center p-6 rounded-lg bg-dark-300 hover:bg-primary transition-colors">
+            <i class="fa fa-heart text-3xl mb-3"></i>
+            <span>爱情</span>
+          </button>
+          
+          <!-- 分类按钮 3 -->
+          <button class="category-btn flex flex-col items-center justify-center p-6 rounded-lg bg-dark-300 hover:bg-primary transition-colors">
+            <i class="fa fa-bolt text-3xl mb-3"></i>
+            <span>科幻</span>
+          </button>
+          
+          <!-- 分类按钮 4 -->
+          <button class="category-btn flex flex-col items-center justify-center p-6 rounded-lg bg-dark-300 hover:bg-primary transition-colors">
+            <i class="fa fa-ghost text-3xl mb-3"></i>
+            <span>恐怖</span>
+          </button>
+          
+          <!-- 分类按钮 5 -->
+          <button class="category-btn flex flex-col items-center justify-center p-6 rounded-lg bg-dark-300 hover:bg-primary transition-colors">
+            <i class="fa fa-smile-o text-3xl mb-3"></i>
+            <span>喜剧</span>
+          </button>
+          
+          <!-- 分类按钮 6 -->
+          <button class="category-btn flex flex-col items-center justify-center p-6 rounded-lg bg-dark-300 hover:bg-primary transition-colors">
+            <i class="fa fa-graduation-cap text-3xl mb-3"></i>
+            <span>纪录片</span>
+          </button>
+        </div>
+        
+        <!-- 年份筛选 -->
+        <div class="mb-12">
+          <h3 class="text-xl font-bold mb-6">按年份筛选</h3>
+          
+          <div class="relative">
+            <input type="range" min="1990" max="2024" value="2024" class="w-full h-2 bg-dark-300 rounded-lg appearance-none cursor-pointer" id="year-slider">
+            
+            <div class="flex justify-between text-light-400 text-sm mt-2">
+              <span>1990</span>
+              <span>2000</span>
+              <span>2010</span>
+              <span>2020</span>
+              <span>2024</span>
+            </div>
+            
+            <div class="text-center mt-4">
+              <span class="text-xl font-bold" id="selected-year">2024</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 评分筛选 -->
+        <div>
+          <h3 class="text-xl font-bold mb-6">按评分筛选</h3>
+          
+          <div class="flex flex-wrap gap-4">
+            <button class="rating-btn active bg-primary text-white px-4 py-2 rounded-full text-sm transition-colors" data-rating="all">全部评分</button>
+            <button class="rating-btn bg-dark-300 hover:bg-primary text-white px-4 py-2 rounded-full text-sm transition-colors" data-rating="9">9分以上</button>
+            <button class="rating-btn bg-dark-300 hover:bg-primary text-white px-4 py-2 rounded-full text-sm transition-colors" data-rating="8">8分以上</button>
+            <button class="rating-btn bg-dark-300 hover:bg-primary text-white px-4 py-2 rounded-full text-sm transition-colors" data-rating="7">7分以上</button>
+            <button class="rating-btn bg-dark-300 hover:bg-primary text-white px-4 py-2 rounded-full text-sm transition-colors" data-rating="6">6分以上</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 订阅区域 -->
+    <section class="py-16 bg-gradient-to-r from-dark-600 to-dark-500">
+      <div class="container mx-auto px-6 md:px-12 text-center">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">订阅最新影视资讯</h2>
+        <p class="text-light-300 mb-8 max-w-2xl mx-auto">第一时间获取最新电影上映信息、电视剧更新提醒和独家优惠</p>
+        
+        <div class="max-w-md mx-auto flex flex-col sm:flex-row gap-4">
+          <input type="email" placeholder="输入您的邮箱地址" class="flex-1 bg-dark-300 border border-dark-100 rounded-full py-3 px-6 focus:outline-none focus:ring-2 focus:ring-primary transition-all">
+          <button class="bg-primary hover:bg-red-700 text-white rounded-full py-3 px-8 transition-all transform hover:scale-105">
+            立即订阅
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
 
-    <!-- 添加弹窗和URL搜索参数处理脚本 -->
-    <script src="js/index-page.js"></script>
+  <!-- 页脚 -->
+  <footer class="bg-dark-600 py-12">
+    <div class="container mx-auto px-6 md:px-12">
+      <div class="flex flex-col md:flex-row justify-between">
+        <!-- Logo 和简介 -->
+        <div class="mb-8 md:mb-0">
+          <div class="flex items-center space-x-2 mb-4">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/bc2a07bc7aec4511913948061c0b06f3~tplv-a9rns2rl98-image.image?rcl=202511101245002DABCB06331CBCEDAECD&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1765341951&x-signature=3SGGrw2FgfMIU%2B47vr7eGDjk5e0%3D" alt="CinemaVerse Logo" class="h-8 w-8">
+            <h2 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">CinemaVerse</h2>
+          </div>
+          <p class="text-light-400 max-w-xs">您的一站式影视平台，提供最新、最热门的电影和电视剧资源</p>
+        </div>
+        
+        <!-- 快速链接 -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-8">
+          <div>
+            <h3 class="text-light-100 font-bold mb-4">快速链接</h3>
+            <ul class="space-y-2">
+              <li><a href="#" class="text-light-400 hover:text-primary transition-colors">首页</a></li>
+              <li><a href="#" class="text-light-400 hover:text-primary transition-colors">电影</a></li>
+              <li><a href="#" class="text-light-400 hover:text-primary transition-colors">电视剧</a></li>
+              <li><a href="#" class="text-light-400 hover:text-primary transition-colors">新上线</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 class="text-light-100 font-bold mb-4">帮助中心</h3>
+            <ul class="space-y-2">
+              <li><a href="#" class="text-light-400 hover:text-primary transition-colors">常见问题</a></li>
+              <li><a href="#" class="text-light-400 hover:text-primary transition-colors">联系我们</a></li>
+              <li><a href="#" class="text-light-400 hover:text-primary transition-colors">隐私政策</a></li>
+              <li><a href="#" class="text-light-400 hover:text-primary transition-colors">使用条款</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 class="text-light-100 font-bold mb-4">关注我们</h3>
+            <div class="flex space-x-4">
+              <a href="#" class="text-light-400 hover:text-primary transition-colors text-xl"><i class="fa fa-facebook"></i></a>
+              <a href="#" class="text-light-400 hover:text-primary transition-colors text-xl"><i class="fa fa-twitter"></i></a>
+              <a href="#" class="text-light-400 hover:text-primary transition-colors text-xl"><i class="fa fa-instagram"></i></a>
+              <a href="#" class="text-light-400 hover:text-primary transition-colors text-xl"><i class="fa fa-youtube"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="border-t border-dark-500 mt-12 pt-8 text-center text-light-400">
+        <p>&copy; 2024 CinemaVerse. 保留所有权利。</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 电影详情模态框 -->
+  <div class="fixed inset-0 z-50 hidden" id="movie-modal">
+    <div class="absolute inset-0 bg-black bg-opacity-80 backdrop-blur-sm"></div>
+    <div class="relative z-10 max-w-4xl mx-auto mt-20 mb-10 bg-dark-300 rounded-lg overflow-hidden animate-fade-in">
+      <button class="absolute top-4 right-4 text-light-100 hover:text-primary text-2xl z-10" id="close-modal">
+        <i class="fa fa-times"></i>
+      </button>
+      
+      <div class="relative h-64 md:h-80">
+        <img src="" alt="电影详情海报" class="w-full h-full object-cover" id="modal-poster">
+        <div class="absolute inset-0 bg-gradient-overlay"></div>
+      </div>
+      
+      <div class="p-6 md:p-8">
+        <div class="flex flex-col md:flex-row gap-8">
+          <div class="md:w-1/3">
+            <img src="" alt="电影封面" class="w-full rounded-lg shadow-lg" id="modal-cover">
+          </div>
+          
+          <div class="md:w-2/3">
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="bg-primary text-white px-2 py-1 rounded text-xs">电影</span>
+              <span class="bg-dark-400 text-light-300 px-2 py-1 rounded text-xs" id="modal-genre">动作/科幻</span>
+              <span class="bg-dark-400 text-light-300 px-2 py-1 rounded text-xs" id="modal-year">2024</span>
+              <span class="bg-dark-400 text-light-300 px-2 py-1 rounded text-xs" id="modal-duration">120分钟</span>
+            </div>
+            
+            <h2 class="text-2xl md:text-3xl font-bold mb-2" id="modal-title">电影标题</h2>
+            
+            <div class="flex items-center mb-4">
+              <div class="rating-circle w-10 h-10 mr-2" style="--rating-value: 85%; --rating-color: #e50914;">
+                <span class="text-sm font-bold">8.5</span>
+              </div>
+              <span class="text-light-400">IMDb 8.5/10</span>
+            </div>
+            
+            <p class="text-light-300 mb-6" id="modal-description">电影描述内容...</p>
+            
+            <div class="mb-6">
+              <h3 class="text-light-100 font-bold mb-2">演员</h3>
+              <p class="text-light-400" id="modal-cast">演员1, 演员2, 演员3</p>
+            </div>
+            
+            <div class="flex flex-wrap gap-4">
+              <button class="bg-primary hover:bg-red-700 text-white rounded-full py-3 px-8 flex items-center space-x-2 transition-all transform hover:scale-105">
+                <i class="fa fa-play"></i>
+                <span>立即观看</span>
+              </button>
+              <button class="bg-dark-400 hover:bg-dark-100 text-white rounded-full py-3 px-8 flex items-center space-x-2 transition-all transform hover:scale-105">
+                <i class="fa fa-plus"></i>
+                <span>加入收藏</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    // 导航栏滚动效果
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        navbar.classList.add('bg-dark-600', 'shadow-lg');
+        navbar.classList.remove('glass-effect');
+      } else {
+        navbar.classList.remove('bg-dark-600', 'shadow-lg');
+        navbar.classList.add('glass-effect');
+      }
+    });
+    
+    // 移动端菜单
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const mobileSearch = document.getElementById('mobile-search');
+    
+    mobileMenuButton.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+      mobileSearch.classList.toggle('hidden');
+    });
+    
+    // 电影数据
+    const movies = [
+      {
+        id: 1,
+        title: '复仇者联盟',
+        year: 2023,
+        genre: '动作/科幻',
+        rating: 9.2,
+        poster: 'https://p3-doubao-search-sign.byteimg.com/pgc-image/7955b42eb66845b0b4919c602122f929~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341943&x-signature=wJzVYG6Xk0F2bFfBEvqgM9F7WqU%3D',
+        description: '复仇者联盟是一部超级英雄电影，讲述了地球最强大的英雄们联合起来对抗宇宙威胁的故事。',
+        cast: '罗伯特·唐尼·朱尼尔, 克里斯·埃文斯, 斯嘉丽·约翰逊',
+        duration: '180分钟',
+        type: 'movie'
+      },
+      {
+        id: 2,
+        title: '明日世界',
+        year: 2024,
+        genre: '科幻/冒险',
+        rating: 8.7,
+        poster: 'https://p3-doubao-search-sign.byteimg.com/pgc-image/53e29a1d8a064a558461608718965404~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341943&x-signature=v3mB%2BdT7dL%2FOywNkL6o1Hh%2BsW%2BQ%3D',
+        description: '明日世界是一部科幻冒险电影，讲述了一群年轻人踏上前往未来世界的冒险之旅。',
+        cast: '乔治·克鲁尼, 布丽特妮·罗伯森, 休·劳瑞',
+        duration: '130分钟',
+        type: 'movie'
+      },
+      {
+        id: 3,
+        title: '末路狂花钱',
+        year: 2024,
+        genre: '喜剧',
+        rating: 8.5,
+        poster: 'https://p3-doubao-search-sign.byteimg.com/pgc-image/RBMLLh6YVutq58R14RhD%285%29~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341943&x-signature=8wLUbxWc5%2BwDtNwY9gCxR3b95c0%3D',
+        description: '末路狂花钱是一部喜剧电影，讲述了一群普通人意外获得巨额财富后发生的一系列搞笑故事。',
+        cast: '贾冰, 谭卓, 小沈阳, 于洋',
+        duration: '110分钟',
+        type: 'movie'
+      },
+      {
+        id: 4,
+        title: '寒单',
+        year: 2024,
+        genre: '剧情',
+        rating: 8.3,
+        poster: 'https://p3-doubao-search-sign.byteimg.com/pgc-image/15215841056331f01477291~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341943&x-signature=K6HycraOiuHeW7%2B4O6fZzNKo6LM%3D',
+        description: '寒单是一部剧情电影，讲述了热血兄弟之间的双向救赎故事。',
+        cast: '胡宇威, 郑人硕',
+        duration: '125分钟',
+        type: 'movie'
+      },
+      {
+        id: 5,
+        title: '山花绽放时',
+        year: 2024,
+        genre: '剧情/爱情',
+        rating: 8.1,
+        poster: 'https://p3-doubao-search-sign.byteimg.com/pgc-image/1598087773396901~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341943&x-signature=eMKWEWYcdC2hXS3M1R%2F%2BEpJq%2BQc%3D',
+        description: '山花绽放时是一部剧情爱情电影，讲述了在大山深处发生的一段纯美爱情故事。',
+        cast: '未知演员',
+        duration: '115分钟',
+        type: 'movie'
+      },
+      {
+        id: 6,
+        title: '王冠',
+        year: 2023,
+        genre: '历史/剧情',
+        rating: 9.0,
+        poster: 'https://p26-doubao-search-sign.byteimg.com/tos-cn-i-xv4ileqgde/017e0a499271401f9000000000000000~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341942&x-signature=W%2Fv91d0I1n%2F8Z7%2FFfWJkE%2F95Ruo%3D',
+        description: '王冠是一部历史剧情电视剧，讲述了英国女王伊丽莎白二世的统治历程。',
+        cast: '克莱尔·福伊, 奥利维娅·科尔曼, 托比亚斯·门基斯',
+        duration: '50分钟/集',
+        type: 'tv'
+      },
+      {
+        id: 7,
+        title: '美人为馅',
+        year: 2023,
+        genre: '悬疑/犯罪',
+        rating: 8.6,
+        poster: 'https://p26-doubao-search-sign.byteimg.com/tos-cn-i-xv4ileqgde/97224663587f4527922366226269167f~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341942&x-signature=Eq7zrXxqDSPOx9f18yVYGfK4908%3D',
+        description: '美人为馅是一部悬疑犯罪电视剧，讲述了一系列离奇案件的侦破过程。',
+        cast: '杨蓉, 白宇, 李庚',
+        duration: '45分钟/集',
+        type: 'tv'
+      },
+      {
+        id: 8,
+        title: '大秦赋',
+        year: 2023,
+        genre: '历史/战争',
+        rating: 8.8,
+        poster: 'https://p26-doubao-search-sign.byteimg.com/tos-cn-i-xv4ileqgde/1b891a3945a24316b082900013931b25~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341942&x-signature=3Wq6Vzo5wbgBBP%2Fm%2BDd2lZNIcc4%3D',
+        description: '大秦赋是一部历史战争电视剧，讲述了大秦帝国的崛起历程。',
+        cast: '张博, 段奕宏, 李乃文',
+        duration: '45分钟/集',
+        type: 'tv'
+      },
+      {
+        id: 9,
+        title: '大决战',
+        year: 2023,
+        genre: '历史/战争',
+        rating: 8.7,
+        poster: 'https://p26-doubao-search-sign.byteimg.com/tos-cn-i-xv4ileqgde/4b614464692b4a059000000000000000~tplv-be4g95zd3a-image.jpeg?rk3s=8e244e95&x-expires=1765341942&x-signature=Duk%2BQIFqV0y5Mkh%2F0b%2F0a3wNQl8%3D',
+        description: '大决战是一部历史战争电视剧，讲述了中国解放战争时期的三大战役。',
+        cast: '唐国强, 王劲松, 刘涛',
+        duration: '45分钟/集',
+        type: 'tv'
+      }
+    ];
+    
+    // 电影详情模态框
+    const movieModal = document.getElementById('movie-modal');
+    const closeModal = document.getElementById('close-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalGenre = document.getElementById('modal-genre');
+    const modalYear = document.getElementById('modal-year');
+    const modalDuration = document.getElementById('modal-duration');
+    const modalDescription = document.getElementById('modal-description');
+    const modalCast = document.getElementById('modal-cast');
+    const modalPoster = document.getElementById('modal-poster');
+    const modalCover = document.getElementById('modal-cover');
+    
+    // 打开电影详情
+    function openMovieDetails(movieId) {
+      const movie = movies.find(m => m.id === movieId);
+      if (movie) {
+        modalTitle.textContent = movie.title;
+        modalGenre.textContent = movie.genre;
+        modalYear.textContent = movie.year;
+        modalDuration.textContent = movie.duration;
+        modalDescription.textContent = movie.description;
+        modalCast.textContent = movie.cast;
+        modalPoster.src = movie.poster;
+        modalCover.src = movie.poster;
+        
+        movieModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+    
+    // 关闭电影详情
+    closeModal.addEventListener('click', () => {
+      movieModal.classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    });
+    
+    // 点击模态框外部关闭
+    movieModal.addEventListener('click', (e) => {
+      if (e.target === movieModal) {
+        movieModal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+      }
+    });
+    
+    // 绑定电影卡片点击事件
+    document.querySelectorAll('.movie-card, .tv-card').forEach((card, index) => {
+      card.addEventListener('click', () => {
+        openMovieDetails(index + 1);
+      });
+    });
+    
+    // 年份滑块
+    const yearSlider = document.getElementById('year-slider');
+    const selectedYear = document.getElementById('selected-year');
+    
+    yearSlider.addEventListener('input', () => {
+      selectedYear.textContent = yearSlider.value;
+    });
+    
+    // 分类按钮
+    document.querySelectorAll('.category-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('bg-primary'));
+        btn.classList.add('bg-primary');
+      });
+    });
+    
+    // 评分按钮
+    document.querySelectorAll('.rating-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('active', 'bg-primary'));
+        btn.classList.add('active', 'bg-primary');
+      });
+    });
+    
+    // 筛选按钮
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active', 'bg-primary'));
+        btn.classList.add('active', 'bg-primary');
+        
+        const filter = btn.dataset.filter;
+        filterRecommendations(filter);
+      });
+    });
+    
+    // AI 推荐系统
+    function generateRecommendations() {
+      const container = document.getElementById('recommendation-container');
+      container.innerHTML = '';
+      
+      // 随机排序电影
+      const shuffledMovies = [...movies].sort(() => 0.5 - Math.random());
+      
+      // 显示前 5 个
+      shuffledMovies.slice(0, 5).forEach(movie => {
+        const card = document.createElement('div');
+        card.className = `movie-card group card-hover rounded-lg overflow-hidden bg-dark-300 ${movie.type}`;
+        card.innerHTML = `
+          <div class="relative overflow-hidden">
+            <img src="${movie.poster}" alt="${movie.title}" class="w-full aspect-[2/3] object-cover transition-transform duration-500 group-hover:scale-110">
+            <div class="absolute inset-0 bg-gradient-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+              <button class="bg-primary hover:bg-red-700 text-white rounded-full w-12 h-12 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                <i class="fa fa-play"></i>
+              </button>
+            </div>
+            <span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded">${movie.rating}</span>
+          </div>
+          <div class="p-4">
+            <h3 class="font-bold mb-1 truncate">${movie.title}</h3>
+            <div class="flex justify-between items-center text-xs text-light-400">
+              <span>${movie.year}</span>
+              <span>${movie.genre}</span>
+            </div>
+          </div>
+        `;
+        
+        card.addEventListener('click', () => {
+          openMovieDetails(movie.id);
+        });
+        
+        container.appendChild(card);
+      });
+    }
+    
+    // 筛选推荐
+    function filterRecommendations(filter) {
+      const cards = document.querySelectorAll('#recommendation-container .movie-card');
+      
+      if (filter === 'all') {
+        cards.forEach(card => card.classList.remove('hidden'));
+      } else {
+        cards.forEach(card => {
+          if (card.classList.contains(filter)) {
+            card.classList.remove('hidden');
+          } else {
+            card.classList.add('hidden');
+          }
+        });
+      }
+    }
+    
+    // 初始化页面
+    window.addEventListener('DOMContentLoaded', () => {
+      generateRecommendations();
+    });
+  </script>
 </body>
 </html>
+
