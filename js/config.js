@@ -22,8 +22,7 @@ const SITE_CONFIG = {
 
 // API站点配置
 const API_SITES = {
-   
-
+}
 
 // 定义合并方法
 function extendAPISites(newSites) {
